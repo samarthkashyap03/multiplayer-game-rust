@@ -31,12 +31,11 @@ impl NetworkManager {
         let (event_tx, rx) = mpsc::channel();
         let (stop_tx, stop_rx) = mpsc::channel();
 
-        // 1. Determine Relay URL and Token (from env or TOKEN.md defaults)
-        let base_url = env::var("INPUT_MUX_URL")
-            .unwrap_or_else(|_| "https://scilab-0098.informatik.uni-kl.de".to_string());
-        let token = env::var("INPUT_MUX_TOKEN").unwrap_or_else(|_| {
-            "imx_982b58a8_waq7hzro5vzprq6uhh52rmeiwzg5fdsx".to_string()
-        });
+        // 1. Determine Relay URL and Token (from environment variables or .env file)
+        let base_url = load_env_var("INPUT_MUX_URL")
+            .unwrap_or_else(|| "https://scilab-0098.informatik.uni-kl.de".to_string());
+        let token = load_env_var("INPUT_MUX_TOKEN")
+            .ok_or("INPUT_MUX_TOKEN not set in environment or .env file")?;
 
         let mut socket = connect_relay(&base_url, &token)?;
 
@@ -182,4 +181,32 @@ fn recv_msg(socket: &mut Socket) -> Result<ToGame, Box<dyn Error>> {
             _ => {}
         }
     }
+}
+
+/// Reads a configuration variable from OS environment or from a local `.env` file.
+fn load_env_var(key: &str) -> Option<String> {
+    if let Ok(val) = env::var(key) {
+        if !val.trim().is_empty() {
+            return Some(val);
+        }
+    }
+
+    if let Ok(content) = std::fs::read_to_string(".env") {
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with('#') || line.is_empty() {
+                continue;
+            }
+            if let Some((k, v)) = line.split_once('=') {
+                if k.trim() == key {
+                    let val = v.trim().trim_matches('"').trim_matches('\'');
+                    if !val.is_empty() {
+                        return Some(val.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }

@@ -47,7 +47,7 @@ The game connects to the university input relay (`scilab-0098.informatik.uni-kl.
 
 ```powershell
 $env:INPUT_MUX_URL = "https://scilab-0098.informatik.uni-kl.de"
-$env:INPUT_MUX_TOKEN = "imx_982b58a8_waq7hzro5vzprq6uhh52rmeiwzg5fdsx"
+$env:INPUT_MUX_TOKEN = "imx_..."
 ```
 
 1. Launch the game:
