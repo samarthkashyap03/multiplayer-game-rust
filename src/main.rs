@@ -9,7 +9,10 @@ mod player;
 mod protocol;
 mod render;
 
+use std::collections::HashMap;
+
 use macroquad::input::{is_key_down, is_key_pressed, KeyCode};
+use macroquad::texture::Texture2D;
 use macroquad::time::get_frame_time;
 use macroquad::window::{next_frame, Conf};
 
@@ -33,7 +36,7 @@ enum GameState {
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: "KaiserClimb - Die Kaiserpfalz Kaiserslautern".to_string(),
+        window_title: "KaiserClimb - The Imperial Palace of Kaiserslautern".to_string(),
         window_width: SCREEN_WIDTH as i32,
         window_height: SCREEN_HEIGHT as i32,
         window_resizable: true,
@@ -54,7 +57,9 @@ async fn main() {
         let spawn_x = 80.0 + (i as f32 * 60.0);
         players.push(Player::new(i, slot, spawn_x, SECTION_1_START_Y));
     }
-    // Local player 0 is always enabled for testing
+    // TODO(multiplayer): For now, player 0 starts enabled so the game is
+    // playable with just one phone (or keyboard-only). Update this once a
+    // proper lobby "ready-up" flow is implemented.
     players[0].connected = true;
 
     // Start background network manager (connecting to relay or fallback)
@@ -64,6 +69,25 @@ async fn main() {
             eprintln!("Relay connection unavailable ({e}); running in local mode.");
             None
         }
+    };
+
+    // Build QR code textures from raw image data produced by the network manager
+    let qr_textures: HashMap<String, Texture2D> = if let Some(ref net_mgr) = net {
+        net_mgr
+            .qr_images
+            .iter()
+            .map(|(slot, qr_data)| {
+                let tex = Texture2D::from_rgba8(
+                    qr_data.width as u16,
+                    qr_data.width as u16,
+                    &qr_data.rgba,
+                );
+                tex.set_filter(macroquad::texture::FilterMode::Nearest);
+                (slot.clone(), tex)
+            })
+            .collect()
+    } else {
+        HashMap::new()
     };
 
     let mut camera_y = SECTION_1_START_Y - SCREEN_HEIGHT * 0.6;
@@ -82,6 +106,7 @@ async fn main() {
                     NetworkEvent::Connected { slot } => {
                         if let Some(p) = players.iter_mut().find(|p| p.slot == slot) {
                             p.connected = true;
+                            p.phone_controlled = true;
                             p.is_bot = false;
                             p.disconnect_timer = None;
                         }
@@ -89,6 +114,7 @@ async fn main() {
                     NetworkEvent::Disconnected { slot } => {
                         if let Some(p) = players.iter_mut().find(|p| p.slot == slot) {
                             p.connected = false;
+                            p.phone_controlled = false;
                             p.disconnect_timer = Some(5.0);
                         }
                     }
@@ -120,8 +146,11 @@ async fn main() {
         match state {
             GameState::Lobby => {
                 let links = net.as_ref().map(|n| &n.slot_links).cloned().unwrap_or_default();
-                render::render_lobby(&players, &links);
+                render::render_lobby(&players, &links, &qr_textures);
 
+                // TODO(multiplayer): Currently starts with any number of players.
+                // Add a minimum-player gate here once the lobby UI shows a
+                // ready-up count (e.g., require at least 2 connected phones).
                 if is_key_pressed(KeyCode::Enter) || is_key_pressed(KeyCode::Space) {
                     state = GameState::Playing;
                 }
@@ -396,6 +425,11 @@ fn handle_player_input(
 
 fn handle_local_keyboard(players: &mut [Player], level: &mut Level, state: &mut GameState) {
     if *state == GameState::Lobby || *state == GameState::Victory {
+        return;
+    }
+
+    // Don't override phone-controlled players with keyboard input
+    if players[0].phone_controlled {
         return;
     }
 

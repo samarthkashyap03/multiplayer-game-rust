@@ -8,6 +8,8 @@ use tungstenite::client::IntoClientRequest;
 use tungstenite::stream::MaybeTlsStream;
 use tungstenite::{Message, WebSocket};
 
+use qrcode::QrCode;
+
 use crate::protocol::{Button, GameMsg, Layout, PROTO, ToGame};
 
 type Socket = WebSocket<MaybeTlsStream<TcpStream>>;
@@ -20,8 +22,17 @@ pub enum NetworkEvent {
     StartGame,
 }
 
+/// Raw RGBA pixel data for a QR code, plus its width in pixels.
+#[derive(Debug, Clone)]
+pub struct QrImageData {
+    pub rgba: Vec<u8>,
+    pub width: u32,
+}
+
 pub struct NetworkManager {
     pub slot_links: HashMap<String, String>,
+    /// QR code pixel data per slot, ready to become macroquad Textures.
+    pub qr_images: HashMap<String, QrImageData>,
     pub rx: Receiver<NetworkEvent>,
     _stop_tx: Sender<()>,
 }
@@ -42,7 +53,7 @@ impl NetworkManager {
         let slots = ["p1", "p2", "p3", "p4"];
         let names = [
             "P1: Barbarossa",
-            "P2: Kaiserhecht",
+            "P2: Imperial Pike",
             "P3: Casimir",
             "P4: Rudolf",
         ];
@@ -79,7 +90,15 @@ impl NetworkManager {
             }
         }
 
-        // 4. Spawn listener thread
+        // 4. Generate QR code images for each slot link
+        let mut qr_images = HashMap::new();
+        for (slot, url) in &slot_links {
+            if let Some(qr_data) = generate_qr_image(url) {
+                qr_images.insert(slot.clone(), qr_data);
+            }
+        }
+
+        // 5. Spawn listener thread
         let tx = event_tx.clone();
         thread::spawn(move || {
             while stop_rx.try_recv() == Err(TryRecvError::Empty) {
@@ -118,6 +137,7 @@ impl NetworkManager {
 
         Ok(Self {
             slot_links,
+            qr_images,
             rx,
             _stop_tx: stop_tx,
         })
@@ -209,4 +229,47 @@ fn load_env_var(key: &str) -> Option<String> {
     }
 
     None
+}
+
+/// Generates a QR code from a URL and returns RGBA pixel data.
+/// Uses uppercase URL for a smaller (alphanumeric) QR code, matching the
+/// reference architecture's approach.
+fn generate_qr_image(url: &str) -> Option<QrImageData> {
+    // Uppercase makes the QR code smaller (uses alphanumeric mode).
+    let upper = url.to_uppercase();
+    let code = QrCode::new(upper.as_bytes()).ok()?;
+    let modules = code.to_colors();
+    let module_count = code.width() as u32;
+
+    // Scale each module to a few pixels so it's scannable on screen.
+    let scale: u32 = 4;
+    let border: u32 = 4; // quiet zone in modules
+    let img_size = (module_count + border * 2) * scale;
+
+    let mut rgba = vec![255u8; (img_size * img_size * 4) as usize];
+
+    for row in 0..module_count {
+        for col in 0..module_count {
+            let dark = modules[(row * module_count + col) as usize]
+                == qrcode::types::Color::Dark;
+            if dark {
+                let px = (col + border) * scale;
+                let py = (row + border) * scale;
+                for dy in 0..scale {
+                    for dx in 0..scale {
+                        let idx = ((py + dy) * img_size + (px + dx)) as usize * 4;
+                        rgba[idx] = 0;     // R
+                        rgba[idx + 1] = 0; // G
+                        rgba[idx + 2] = 0; // B
+                        // A stays 255
+                    }
+                }
+            }
+        }
+    }
+
+    Some(QrImageData {
+        rgba,
+        width: img_size,
+    })
 }

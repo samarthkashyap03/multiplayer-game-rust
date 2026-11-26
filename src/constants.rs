@@ -9,8 +9,8 @@ pub const WORLD_BOTTOM_Y: f32 = 3000.0;
 
 // Physics constants
 pub const GRAVITY: f32 = 950.0;
-pub const MOVE_SPEED: f32 = 230.0;
-pub const JUMP_VELOCITY: f32 = -480.0;
+pub const MOVE_SPEED: f32 = 240.0;
+pub const JUMP_VELOCITY: f32 = -520.0;
 pub const CLIMB_SPEED: f32 = 170.0;
 pub const PLAYER_WIDTH: f32 = 30.0;
 pub const PLAYER_HEIGHT: f32 = 46.0;
@@ -41,7 +41,7 @@ pub const PLAYER_COLORS: [Color; 4] = [
 
 pub const PLAYER_NAMES: [&str; 4] = [
     "P1: Barbarossa",
-    "P2: Kaiserhecht",
+    "P2: Imperial Pike",
     "P3: Casimir",
     "P4: Rudolf",
 ];

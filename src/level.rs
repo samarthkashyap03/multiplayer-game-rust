@@ -27,39 +27,53 @@ impl Level {
 
         // Ground Floor (Section 1 Courtyard Base)
         // Left Courtyard bank
-        platforms.push(Rect::new(0.0, WORLD_BOTTOM_Y - 50.0, 420.0, 70.0));
+        platforms.push(Rect::new(0.0, WORLD_BOTTOM_Y - 50.0, 440.0, 70.0));
         // Right Courtyard bank
-        platforms.push(Rect::new(700.0, WORLD_BOTTOM_Y - 50.0, WORLD_WIDTH - 700.0, 70.0));
+        platforms.push(Rect::new(660.0, WORLD_BOTTOM_Y - 50.0, WORLD_WIDTH - 660.0, 70.0));
 
         // ---------------------------------------------------------------------
         // SECTION 1: PALACE GROUNDS (Y: 3000 to 2050)
         // ---------------------------------------------------------------------
         // Hazard: Deep water pond gap between banks
-        hazards.push(Rect::new(420.0, WORLD_BOTTOM_Y - 20.0, 280.0, 50.0));
+        hazards.push(Rect::new(430.0, WORLD_BOTTOM_Y - 20.0, 240.0, 50.0));
 
-        // Stepping stone platforms across pond
-        platforms.push(Rect::new(480.0, WORLD_BOTTOM_Y - 70.0, 160.0, 20.0));
-        platforms.push(Rect::new(200.0, 2850.0, 160.0, 20.0));
-        platforms.push(Rect::new(720.0, 2850.0, 160.0, 20.0));
+        // Safe stepping stone bridge across pond
+        // platforms.push(Rect::new(420.0, WORLD_BOTTOM_Y - 80.0, 260.0, 20.0));
 
-        // Central terrace over fishpond
-        platforms.push(Rect::new(440.0, 2760.0, 220.0, 22.0));
+        // Tier 1: Low Courtyard Terraces (y: 2850)
+        platforms.push(Rect::new(180.0, 2850.0, 240.0, 20.0));
+        platforms.push(Rect::new(680.0, 2850.0, 240.0, 20.0));
 
-        // Left & Right Palace scaffolding climbing paths
-        platforms.push(Rect::new(100.0, 2680.0, 180.0, 20.0));
-        platforms.push(Rect::new(820.0, 2680.0, 180.0, 20.0));
+        // Tier 2: Central Terrace over fishpond (y: 2775)
+        platforms.push(Rect::new(380.0, 2775.0, 340.0, 22.0));
 
-        platforms.push(Rect::new(280.0, 2580.0, 200.0, 20.0));
-        platforms.push(Rect::new(620.0, 2580.0, 200.0, 20.0));
+        // Tier 3: Scaffolding climbing paths (y: 2700)
+        platforms.push(Rect::new(120.0, 2700.0, 280.0, 20.0));
+        platforms.push(Rect::new(680.0, 2700.0, 280.0, 20.0));
 
-        // High terrace with Rope Anchor 1
-        platforms.push(Rect::new(420.0, 2460.0, 260.0, 22.0));
+        // Tier 4: Mid walkways (y: 2620)
+        platforms.push(Rect::new(260.0, 2620.0, 260.0, 20.0));
+        platforms.push(Rect::new(560.0, 2620.0, 260.0, 20.0));
+
+        // Tier 5: Central approach terrace (y: 2540)
+        platforms.push(Rect::new(380.0, 2540.0, 340.0, 22.0));
+
+        // Tier 6: High terrace with Rope Anchor 1 (y: 2460)
+        platforms.push(Rect::new(450.0, 2460.0, 200.0, 24.0));
         // Rope Anchor 1 (Player can drop rope to help teammate up)
-        ropes.push(RopeAnchor::new(0, 550.0, 2460.0, 280.0));
+        ropes.push(RopeAnchor::new(0, 550.0, 2460.0, 320.0));
 
-        // Scaffolds leading to Gate 1
-        platforms.push(Rect::new(160.0, 2350.0, 240.0, 20.0));
-        platforms.push(Rect::new(700.0, 2350.0, 240.0, 20.0));
+        // Tier 7: Lower approach to Gate 1 (y: 2375)
+        platforms.push(Rect::new(160.0, 2375.0, 260.0, 20.0));
+        platforms.push(Rect::new(660.0, 2375.0, 260.0, 20.0));
+
+        // Tier 8: Mid approach to Gate 1 (y: 2290)
+        platforms.push(Rect::new(280.0, 2290.0, 240.0, 20.0));
+        platforms.push(Rect::new(560.0, 2290.0, 240.0, 20.0));
+
+        // Tier 9: Steps leading up to Gate 1 entrance (y: 2205)
+        platforms.push(Rect::new(180.0, 2205.0, 240.0, 20.0));
+        platforms.push(Rect::new(660.0, 2205.0, 240.0, 20.0));
 
         // Checkpoint 1 Entrance floor
         platforms.push(Rect::new(0.0, CHECKPOINT_1_Y + 70.0, 480.0, 25.0));
@@ -78,28 +92,28 @@ impl Level {
         // Historical Markers in Section 1 (Wall, Fishpond, Wildlife Park)
         carry_objects.push(CarryObject::new(
             0,
-            "1. Wehrhafte Ringmauer",
+            "1. Defensive Ring Wall",
             1,
-            120.0,
-            2650.0,
+            160.0,
+            2664.0,
             470.0,
             CHECKPOINT_1_Y + 45.0,
         ));
         carry_objects.push(CarryObject::new(
             1,
-            "2. Kaiserwoog Teich",
+            "2. Kaiserwoog Pond",
             1,
-            900.0,
-            2650.0,
+            860.0,
+            2664.0,
             530.0,
             CHECKPOINT_1_Y + 45.0,
         ));
         carry_objects.push(CarryObject::new(
             2,
-            "3. Staufischer Hirschpark",
+            "3. Staufer Deer Park",
             1,
             460.0,
-            2730.0,
+            2739.0,
             590.0,
             CHECKPOINT_1_Y + 45.0,
         ));
@@ -107,6 +121,8 @@ impl Level {
         // ---------------------------------------------------------------------
         // SECTION 2: THE DOMUS (Y: 2050 to 1050)
         // ---------------------------------------------------------------------
+        // Threshold stepping platform past Gate 1 into Domus
+        platforms.push(Rect::new(450.0, 2030.0, 200.0, 20.0));
         // The Great Imperial Residential Palace (25m x 19m x 19m)
         platforms.push(Rect::new(200.0, 1940.0, 220.0, 22.0));
         platforms.push(Rect::new(680.0, 1940.0, 220.0, 22.0));
@@ -143,7 +159,7 @@ impl Level {
         // Stone Foundation Blocks to position in Domus
         carry_objects.push(CarryObject::new(
             3,
-            "Domus Quader 25m Nord",
+            "Domus Block 25m North",
             2,
             140.0,
             1670.0,
@@ -152,7 +168,7 @@ impl Level {
         ));
         carry_objects.push(CarryObject::new(
             4,
-            "Domus Quader 19m Süd",
+            "Domus Block 19m South",
             2,
             800.0,
             1670.0,
@@ -197,7 +213,7 @@ impl Level {
         // Architectural Fragments (Chapel vs Domus building phases)
         carry_objects.push(CarryObject::new(
             5,
-            "Kapellen-Rundbogen (13. Jh.)",
+            "Chapel Round Arch (13th c.)",
             3,
             160.0,
             680.0,
@@ -206,7 +222,7 @@ impl Level {
         ));
         carry_objects.push(CarryObject::new(
             6,
-            "Staufer-Säule Friedrich II.",
+            "Staufer Column Frederick II",
             3,
             760.0,
             680.0,

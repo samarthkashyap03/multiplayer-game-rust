@@ -22,6 +22,9 @@ pub struct Player {
     pub is_climbing: bool,
     pub climbing_rope_id: Option<usize>,
     pub connected: bool,
+    /// True when this player is being controlled by a phone via the relay.
+    /// Prevents the local keyboard handler from overriding phone input.
+    pub phone_controlled: bool,
     pub is_bot: bool,
     pub disconnect_timer: Option<f32>,
     pub last_safe_pos: (f32, f32),
@@ -47,6 +50,7 @@ impl Player {
             is_climbing: false,
             climbing_rope_id: None,
             connected: false,
+            phone_controlled: false,
             is_bot: false,
             disconnect_timer: None,
             last_safe_pos: (start_x, start_y),

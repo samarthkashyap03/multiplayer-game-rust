@@ -1,6 +1,7 @@
 use macroquad::color::{Color, BLACK, GRAY, GREEN, RED, WHITE, YELLOW};
 use macroquad::shapes::{draw_circle, draw_line, draw_rectangle, draw_rectangle_lines};
 use macroquad::text::{draw_text, measure_text};
+use macroquad::texture::{draw_texture_ex, DrawTextureParams, Texture2D};
 
 use crate::constants::{
     GOLD_ACCENT, PARCHMENT, RED_SANDSTONE, RED_SANDSTONE_DARK, RED_SANDSTONE_LIGHT,
@@ -220,9 +221,9 @@ pub fn render_world(
     draw_line(0.0, 48.0, SCREEN_WIDTH, 48.0, 2.0, GOLD_ACCENT);
 
     let section_title = match current_section {
-        1 => "ABSCHNITT 1: DIE PALASTANLAGE (PALACE GROUNDS)",
-        2 => "ABSCHNITT 2: DER GROSSE DOMUS (25m x 19m x 19m)",
-        _ => "ABSCHNITT 3: DIE SPÄTERE DOPPELKAPELLE (FRIEDRICH II.)",
+        1 => "SECTION 1: THE PALACE GROUNDS",
+        2 => "SECTION 2: THE GREAT DOMUS (25m x 19m x 19m)",
+        _ => "SECTION 3: THE LATER DOUBLE CHAPEL (FREDERICK II)",
     };
     draw_text(section_title, 24.0, 32.0, 22.0, GOLD_ACCENT);
 
@@ -291,7 +292,7 @@ pub fn render_checkpoint_modal(quiz: &CheckpointQuiz, time_left: f32, _players: 
     draw_rectangle(mx + 40.0, my + mh - 55.0, mw - 80.0, 12.0, GRAY);
     draw_rectangle(mx + 40.0, my + mh - 55.0, bar_w, 12.0, RED_SANDSTONE);
     draw_text(
-        &format!("⏳ Verbleibende Zeit: {:.1}s  |  💡 {}", time_left, quiz.did_you_know),
+        &format!("⏳ Time remaining: {:.1}s  |  💡 {}", time_left, quiz.did_you_know),
         mx + 40.0,
         my + mh - 64.0,
         15.0,
@@ -299,15 +300,19 @@ pub fn render_checkpoint_modal(quiz: &CheckpointQuiz, time_left: f32, _players: 
     );
 }
 
-pub fn render_lobby(players: &[Player], links: &std::collections::HashMap<String, String>) {
+pub fn render_lobby(
+    players: &[Player],
+    links: &std::collections::HashMap<String, String>,
+    qr_textures: &std::collections::HashMap<String, Texture2D>,
+) {
     draw_rectangle(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT, Color::new(0.12, 0.08, 0.14, 1.0));
 
     // Title Banner
-    let title = "🏰 KAISERCLIMB: DIE KAISERPFALZ KAISERSLAUTERN 🏰";
+    let title = "🏰 KAISERCLIMB: THE IMPERIAL PALACE OF KAISERSLAUTERN 🏰";
     let tw = measure_text(title, None, 36, 1.0).width;
     draw_text(title, (SCREEN_WIDTH - tw) / 2.0, 80.0, 36.0, GOLD_ACCENT);
 
-    let sub = "Kooperatives 2D-Multiplayer-Kletterabenteuer (1–4 Spieler)";
+    let sub = "Cooperative 2D Multiplayer Climbing Adventure (1-4 Players)";
     let sw = measure_text(sub, None, 22, 1.0).width;
     draw_text(sub, (SCREEN_WIDTH - sw) / 2.0, 120.0, 22.0, PARCHMENT);
 
@@ -327,37 +332,57 @@ pub fn render_lobby(players: &[Player], links: &std::collections::HashMap<String
 
         // Connection Status
         let (status_text, status_col) = if p.connected {
-            ("VERBUNDEN ✓", GREEN)
+            ("CONNECTED ✓", GREEN)
         } else {
-            ("WARTE AUF SCAN...", YELLOW)
+            ("WAITING FOR SCAN...", YELLOW)
         };
         draw_text(status_text, px + 20.0, py + 80.0, 18.0, status_col);
 
         // QR Code / Link URL
         if let Some(link) = links.get(&p.slot) {
-            draw_text("Scanne mit Handy:", px + 20.0, py + 120.0, 16.0, PARCHMENT);
+            draw_text("Scan with your phone:", px + 20.0, py + 120.0, 16.0, PARCHMENT);
 
             // Draw link string
             let short_link = if link.len() > 32 { &link[..32] } else { link };
             draw_text(short_link, px + 10.0, py + 145.0, 13.0, GOLD_ACCENT);
 
-            // Render pseudo QR grid preview or instruction box
-            draw_rectangle(px + 45.0, py + 175.0, 180.0, 180.0, WHITE);
-            draw_rectangle_lines(px + 45.0, py + 175.0, 180.0, 180.0, 3.0, BLACK);
-            draw_text("📱 CONTROLLER", px + 65.0, py + 265.0, 18.0, BLACK);
-            draw_text(&format!("Slot: {}", p.slot), px + 95.0, py + 295.0, 18.0, RED_SANDSTONE);
+            // Render actual QR code texture if available
+            if let Some(tex) = qr_textures.get(&p.slot) {
+                let qr_size = 180.0_f32;
+                let qr_x = px + (pw - qr_size) / 2.0;
+                let qr_y = py + 165.0;
+                // White background behind QR code
+                draw_rectangle(qr_x - 4.0, qr_y - 4.0, qr_size + 8.0, qr_size + 8.0, WHITE);
+                draw_texture_ex(
+                    tex,
+                    qr_x,
+                    qr_y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(macroquad::math::Vec2::new(qr_size, qr_size)),
+                        ..Default::default()
+                    },
+                );
+                draw_rectangle_lines(qr_x - 4.0, qr_y - 4.0, qr_size + 8.0, qr_size + 8.0, 2.0, BLACK);
+            } else {
+                // Fallback placeholder
+                draw_rectangle(px + 45.0, py + 175.0, 180.0, 180.0, WHITE);
+                draw_rectangle_lines(px + 45.0, py + 175.0, 180.0, 180.0, 3.0, BLACK);
+                draw_text("📱 CONTROLLER", px + 65.0, py + 265.0, 18.0, BLACK);
+                draw_text(&format!("Slot: {}", p.slot), px + 95.0, py + 295.0, 18.0, RED_SANDSTONE);
+            }
         } else {
-            draw_text("Relay Link bereit", px + 20.0, py + 140.0, 16.0, GRAY);
-            draw_text("(Tastatur-Modus aktiv)", px + 20.0, py + 165.0, 14.0, WHITE);
+            draw_text("Relay link ready", px + 20.0, py + 140.0, 16.0, GRAY);
+            draw_text("(Keyboard mode active)", px + 20.0, py + 165.0, 14.0, WHITE);
         }
 
         // Controller hints
-        draw_text("Steuerung am Smartphone:", px + 20.0, py + 380.0, 14.0, GRAY);
+        draw_text("Phone controls:", px + 20.0, py + 380.0, 14.0, GRAY);
         draw_text("D-Pad / A / B / X / Menu", px + 20.0, py + 400.0, 14.0, WHITE);
     }
 
     // Start instructions
-    let prompt = "Drücke [ Menu ] am Smartphone oder [ Enter / Leertaste ] am PC zum Starten!";
+    let prompt = "Press [ Menu ] on your phone or [ Enter / Space ] on PC to start!";
     let pw = measure_text(prompt, None, 22, 1.0).width;
     draw_rectangle(
         (SCREEN_WIDTH - pw) / 2.0 - 20.0,
@@ -372,7 +397,7 @@ pub fn render_lobby(players: &[Player], links: &std::collections::HashMap<String
 pub fn render_victory_screen() {
     draw_rectangle(0.0, 0.0, SCREEN_WIDTH, SCREEN_HEIGHT, Color::new(0.12, 0.08, 0.14, 0.98));
 
-    let title = "🎉 DIE KAISERPFALZ WURDE ERFOLGREICH ERKUNDET & REKONSTRUIERT! 🎉";
+    let title = "🎉 THE IMPERIAL PALACE HAS BEEN SUCCESSFULLY EXPLORED & RECONSTRUCTED! 🎉";
     let tw = measure_text(title, None, 28, 1.0).width;
     draw_text(title, (SCREEN_WIDTH - tw) / 2.0, 80.0, 28.0, GOLD_ACCENT);
 
@@ -391,17 +416,17 @@ pub fn render_victory_screen() {
     draw_rectangle(rx + 80.0, ry + 40.0, 60.0, 220.0, RED_SANDSTONE_LIGHT);
     draw_rectangle(rx + 500.0, ry + 40.0, 60.0, 220.0, RED_SANDSTONE_LIGHT);
 
-    draw_text("HISTORISCHE REKONSTRUKTION (12. & 13. JAHRHUNDERT)", rx + 75.0, ry + 35.0, 18.0, RED_SANDSTONE_DARK);
-    draw_text("Domus: ca. 25m Länge • 19m Breite • 19m Höhe", rx + 130.0, ry + 285.0, 16.0, BLACK);
+    draw_text("HISTORICAL RECONSTRUCTION (12th & 13th CENTURY)", rx + 75.0, ry + 35.0, 18.0, RED_SANDSTONE_DARK);
+    draw_text("Domus: approx. 25m length • 19m width • 19m height", rx + 130.0, ry + 285.0, 16.0, BLACK);
 
     // Summary Badges
     draw_rectangle(rx, ry + 320.0, 640.0, 150.0, Color::new(0.2, 0.16, 0.22, 0.9));
-    draw_text("HISTORISCHE MEILENSTEINE:", rx + 30.0, ry + 355.0, 20.0, GOLD_ACCENT);
-    draw_text("✓ 1. Palastanlage: Rahewin's Chronik vom staufischen Wildpark & See", rx + 30.0, ry + 385.0, 17.0, WHITE);
-    draw_text("✓ 2. Der Domus: Zentrales kaiserliches Repräsentationsgebäude Barbarossas", rx + 30.0, ry + 415.0, 17.0, WHITE);
-    draw_text("✓ 3. Spätere Doppelkapelle: Bauphase unter Kaiser Friedrich II. vollendet", rx + 30.0, ry + 445.0, 17.0, WHITE);
+    draw_text("HISTORICAL MILESTONES:", rx + 30.0, ry + 355.0, 20.0, GOLD_ACCENT);
+    draw_text("✓ 1. Palace Grounds: Rahewin's chronicle of the Staufer wildlife park & lake", rx + 30.0, ry + 385.0, 17.0, WHITE);
+    draw_text("✓ 2. The Domus: Central imperial residential building of Barbarossa", rx + 30.0, ry + 415.0, 17.0, WHITE);
+    draw_text("✓ 3. Later Double Chapel: Construction phase completed under Emperor Frederick II", rx + 30.0, ry + 445.0, 17.0, WHITE);
 
-    let return_prompt = "Drücke [ Enter ] oder [ Menu ], um zur Lobby zurückzukehren";
+    let return_prompt = "Press [ Enter ] or [ Menu ] to return to the lobby";
     let rpw = measure_text(return_prompt, None, 20, 1.0).width;
     draw_text(return_prompt, (SCREEN_WIDTH - rpw) / 2.0, 660.0, 20.0, PARCHMENT);
 }
